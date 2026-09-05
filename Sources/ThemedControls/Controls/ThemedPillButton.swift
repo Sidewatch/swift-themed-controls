@@ -1,0 +1,73 @@
+//
+//  ThemedPillButton.swift
+//  ThemedControls
+//
+//  The app's text button — the composer's "Send ⏎" pill made shared.
+//
+//  Created by David Sherlock on 9/3/26.
+//
+
+import AppKit
+
+/// The app's text button — the composer's "Send ⏎" pill made shared. A stock `NSButton`
+/// paints the system bezel, which ignores the palette: a grey lozenge on a warm dark
+/// theme (Replace All, Run, Browse…, Restore Defaults all shipped that way). This one is
+/// borderless and draws its own soft tinted pill — accent for the row's main action,
+/// foreground-neutral for secondary ones — and re-tints on `.themeDidChange`.
+/// Not `final`: `ActionButton` (the tools) adds a closure on top.
+open class ThemedPillButton: NSButton {
+    /// Accent tint for the main action of a row; neutral for the rest.
+    open var prominent = true { didSet { applyTheme() } }
+
+    public convenience init(title: String, target: AnyObject? = nil, action: Selector? = nil) {
+        self.init(frame: .zero)
+        self.title = title
+        self.target = target
+        self.action = action
+    }
+    public override init(frame: NSRect) { super.init(frame: frame); setup() }
+    @available(*, unavailable) public required init?(coder: NSCoder) { fatalError() }
+    deinit { NotificationCenter.default.removeObserver(self) }
+
+    private func setup() {
+        isBordered = false
+        wantsLayer = true
+        layer?.cornerRadius = 5
+        layer?.borderWidth = 1
+        setButtonType(.momentaryPushIn)
+        setContentHuggingPriority(.required, for: .horizontal)
+        setContentCompressionResistancePriority(.required, for: .horizontal)
+        translatesAutoresizingMaskIntoConstraints = false
+        heightAnchor.constraint(equalToConstant: 22).isActive = true
+        widthAnchor.constraint(greaterThanOrEqualToConstant: 62).isActive = true
+        NotificationCenter.default.addObserver(self, selector: #selector(applyTheme),
+                                               name: ThemedControls.paletteDidChange, object: nil)
+        applyTheme()
+    }
+
+    open override var title: String { didSet { applyTheme() } }
+
+    open override var intrinsicContentSize: NSSize {
+        let s = super.intrinsicContentSize
+        return NSSize(width: max(62, s.width + 18), height: 22)
+    }
+
+    private var tint: NSColor { prominent ? ThemedControls.palette.accent : ThemedControls.palette.foreground }
+
+    @objc open func applyTheme() {
+        let para = NSMutableParagraphStyle(); para.alignment = .center
+        attributedTitle = NSAttributedString(string: title, attributes: [
+            .font: NSFont.systemFont(ofSize: 11, weight: .semibold),
+            .foregroundColor: tint,
+            .paragraphStyle: para,
+        ])
+        layer?.backgroundColor = tint.withAlphaComponent(ThemedControls.palette.isDark ? 0.16 : 0.12).cgColor
+        layer?.borderColor = tint.withAlphaComponent(0.35).cgColor
+    }
+
+    /// Pressed: a deeper fill, the way the system bezel darkens.
+    open override func highlight(_ flag: Bool) {
+        super.highlight(flag)
+        layer?.backgroundColor = tint.withAlphaComponent(flag ? 0.32 : (ThemedControls.palette.isDark ? 0.16 : 0.12)).cgColor
+    }
+}
