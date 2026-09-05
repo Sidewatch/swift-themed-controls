@@ -23,6 +23,8 @@ final class PaletteTests: XCTestCase {
         var statusText: NSColor { .gray }
         var border: NSColor { .gray }
         var rowSeparator: NSColor { .gray }
+        var mutedText: NSColor { .gray }
+        var statusBackground: NSColor { .black }
         var smallFont: NSFont { .systemFont(ofSize: 9) }
         func elevatedSurface(dark: CGFloat, light: CGFloat) -> NSColor { dark > light ? .darkGray : .lightGray }
     }

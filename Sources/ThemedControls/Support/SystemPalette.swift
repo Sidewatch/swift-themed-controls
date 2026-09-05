@@ -21,6 +21,8 @@ public struct SystemPalette: ControlPalette {
     public var statusText: NSColor { .secondaryLabelColor }
     public var border: NSColor { .separatorColor }
     public var rowSeparator: NSColor { .separatorColor }
+    public var mutedText: NSColor { .tertiaryLabelColor }
+    public var statusBackground: NSColor { .windowBackgroundColor }
     public var smallFont: NSFont { .systemFont(ofSize: NSFont.smallSystemFontSize) }
     public func elevatedSurface(dark: CGFloat, light: CGFloat) -> NSColor {
         NSColor.windowBackgroundColor.blended(isDark ? dark : light, toward: .labelColor)

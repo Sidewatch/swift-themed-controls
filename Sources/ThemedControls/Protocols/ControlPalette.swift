@@ -23,6 +23,10 @@ public protocol ControlPalette: Sendable {
     var statusText: NSColor { get }
     var border: NSColor { get }
     var rowSeparator: NSColor { get }
+    /// Text that should recede: placeholders, hints, a pop-up's secondary label.
+    var mutedText: NSColor { get }
+    /// The status bar's background, also used for table headers.
+    var statusBackground: NSColor { get }
     /// The small UI font (captions, secondary buttons).
     var smallFont: NSFont { get }
     /// A surface lifted off the background: the foreground blended in by `dark` on a dark
