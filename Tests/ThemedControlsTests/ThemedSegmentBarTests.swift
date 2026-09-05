@@ -10,6 +10,8 @@
 import XCTest
 @testable import ThemedControls
 
+/// Tests for `ThemedSegmentBar.content(for:width:)`: wide segments show symbol and text, narrow
+/// ones degrade to the symbol, and the bar redraws while resized.
 @MainActor
 final class ThemedSegmentBarTests: XCTestCase {
 

@@ -2,24 +2,10 @@
 //  NSTextView+SystemTextIntelligence.swift
 //  ThemedControls
 //
-//  Every system text feature that rewrites or decorates what you typed — OFF, on
-//  every text surface, Xcode-style. Writing Tools is the loud one (an AI rewrite
-//  menu inside a code-review cockpit is the "second steering wheel" the product
-//  bans), but autocorrect turning a search term into a word, smart quotes inside
-//  a commit message, and inline predictive text ghosting a suggestion into a
-//  find field are the same mistake at smaller scale.
+//  One configured field editor per window (AppKit expects the same instance back for a window,
+//  and never retains it — the table holds it, keyed weakly by window).
 //
-//  Two surfaces need it. An NSTextView you build yourself (the ⌘K composer, the
-//  SQL query box, the tool panes) calls `disableSystemTextIntelligence()` on
-//  itself. An NSTextField never draws its own text while editing: the WINDOW
-//  lends it a shared field editor, an NSTextView the window creates — so every
-//  search field, find bar, rename field, settings field and commit-message field
-//  inherits whatever that editor does. `FieldEditorPolicy` hands each window one
-//  configured editor via `windowWillReturnFieldEditor` (delegates) or a
-//  `fieldEditor(_:for:)` override (panel subclasses); that one hook covers every
-//  text field in the window, present and future.
-//
-//  Created by David Sherlock on 9/2/26.
+//  Created by David Sherlock on 9/5/26.
 //
 
 import AppKit

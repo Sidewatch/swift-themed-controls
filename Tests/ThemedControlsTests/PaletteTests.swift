@@ -2,7 +2,8 @@
 //  PaletteTests.swift
 //  ThemedControlsTests
 //
-//  Tests for the installed palette and the system default.
+//  Tests for the installed `ControlPalette`: a custom palette is what the controls read, and
+//  `paletteDidChange` fires on install.
 //
 //  Created by David Sherlock on 9/5/26.
 //
@@ -10,6 +11,8 @@
 import XCTest
 @testable import ThemedControls
 
+/// Tests for the installed `ControlPalette`: a custom palette is what the controls read, and
+/// `paletteDidChange` fires on install.
 @MainActor
 final class PaletteTests: XCTestCase {
 
