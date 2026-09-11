@@ -6,6 +6,21 @@ AppKit controls that draw from **your app's palette** instead of the system's: a
 - Swift 6 language mode with main-actor default isolation, tools 6.2, macOS 14+, AppKit only.
 - Part of the Sidewatch package family; every package follows the same layout and PR rules.
 
+## Requirements
+
+- macOS 14+
+- Swift 6.2+ (Swift 6 language mode)
+
+## Installation
+
+### Swift Package Manager
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/Sidewatch/swift-themed-controls.git", from: "0.1.0")
+]
+```
+
 ## Usage
 
 ```swift
