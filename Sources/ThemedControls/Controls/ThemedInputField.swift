@@ -37,20 +37,42 @@ private enum ThemedInputStyle {
 }
 
 /// Insets the text a few points so it doesn't hug the rounded border (a right-aligned
-/// number would otherwise touch the edge). Drawing/editing rects only — no layout.
+/// number would otherwise touch the edge), and centres the single line in the box.
+/// Drawing/editing rects only — no layout.
+///
+/// The vertical part matters because these fields are given an explicit height (the themed
+/// box needs one) that is taller than a line of 12pt text. A borderless, scrollable cell
+/// lays its line from the TOP of the rect it is handed, so the number sat 3.5pt above the
+/// centre of its own box — visible as soon as you look for it, and `--dump-settings` could
+/// not see it because the box's own border dominated the ink it was measuring.
+///
+/// The slack is MEASURED, never a tuned constant: `cellSize(forBounds:)` reports the line's
+/// natural height and `insetBy` takes half the remainder off each end, so the text is centred
+/// by construction at any font size or box height. (Hand-tuning that number is the mistake
+/// recorded against the status bar's "ctx" cap.)
 private final class PaddedFieldCell: NSTextFieldCell {
     private static let dx: CGFloat = 6
-    override func drawingRect(forBounds rect: NSRect) -> NSRect {
-        super.drawingRect(forBounds: rect.insetBy(dx: Self.dx, dy: 0))
+
+    /// `rect` inset horizontally for padding and vertically so a single line sits centred.
+    private func textRect(_ rect: NSRect) -> NSRect {
+        let padded = rect.insetBy(dx: Self.dx, dy: 0)
+        let natural = super.cellSize(forBounds: padded).height
+        guard natural > 0, natural < padded.height else { return padded }
+        return padded.insetBy(dx: 0, dy: ((padded.height - natural) / 2).rounded())
     }
+
+    override func drawingRect(forBounds rect: NSRect) -> NSRect {
+        super.drawingRect(forBounds: textRect(rect))
+    }
+    // The editing rects get the same treatment, or the number jumps the moment it is clicked.
     override func edit(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText,
                        delegate: Any?, event: NSEvent?) {
-        super.edit(withFrame: rect.insetBy(dx: Self.dx, dy: 0), in: controlView,
+        super.edit(withFrame: textRect(rect), in: controlView,
                    editor: textObj, delegate: delegate, event: event)
     }
     override func select(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText,
                          delegate: Any?, start: Int, length: Int) {
-        super.select(withFrame: rect.insetBy(dx: Self.dx, dy: 0), in: controlView,
+        super.select(withFrame: textRect(rect), in: controlView,
                      editor: textObj, delegate: delegate, start: start, length: length)
     }
 }

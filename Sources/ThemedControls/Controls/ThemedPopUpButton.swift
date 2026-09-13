@@ -15,7 +15,7 @@ import AppKit
 /// chevron. The stock control on a dark warm palette drew a system-grey lozenge with a
 /// blue chevron (Library's category filter, every Settings popup). Only drawing changes
 /// — items, selection, target/action and the pop-up itself are the superclass's.
-/// Not `final`: `FontSizePicker` is one with a preset menu on top.
+/// Not `final`: subclasses add their own menu on top.
 open class ThemedPopUpButton: NSPopUpButton {
     public convenience init() { self.init(frame: .zero, pullsDown: false) }
     public override init(frame: NSRect, pullsDown: Bool) {
