@@ -9,7 +9,7 @@ AppKit controls drawn from a host-supplied palette. Module `ThemedControls`; `sw
 
 - `Protocols/` — protocols the module exposes: ControlPalette (what a control reads from the theme)
 - `Core/` — the engine: ThemedControls (the installed palette and the paletteDidChange notification)
-- `Controls/` — one control per file: ThemedSegmentBar, ThemedPillButton, ThemedCheckbox, ThemedSearchField, ThemedInputField, ThemedRowView, ThemedScrollView, EmptyStateView, ThemedPopUpButton, ThemedTableHeaderView (secondary types alongside: ThemedInputStyle, PaddedFieldCell, ThemedSecureInputField, ThemedSelectionRowView, ThemedGroupRowView)
+- `Controls/` — one control per file: ThemedSegmentBar, ThemedPillButton, ThemedCheckbox, ThemedSearchField, ThemedInputField, ThemedRowView, ThemedScrollView, EmptyStateView, ThemedPopUpButton, ThemedTableHeaderView, ThemedTableHeaderCell (secondary types alongside: ThemedInputStyle, PaddedFieldCell, ThemedSecureInputField, ThemedSelectionRowView, ThemedGroupRowView)
 - `Support/` — pure helpers: SystemPalette (the macOS system colours as a palette)
 - `Extensions/` — one extension per idiom: NSColor+Blend, NSImage+Tinted, NSTextView+SystemTextIntelligence, NSTextView+WritingTools
 
@@ -20,3 +20,8 @@ AppKit controls drawn from a host-supplied palette. Module `ThemedControls`; `sw
 - A control reads `ThemedControls.palette` at draw time and observes `ThemedControls.paletteDidChange`; it never caches a colour across a theme switch.
 - Classes the host may subclass are `open` with `open` overridable members; everything else is `public final`.
 - Layout must degrade: a label that does not fit is shortened or dropped, never overlapped (`ThemedSegmentBar.content(for:width:)` is the model).
+- A cell that draws its own background must also drop `isHighlighted` around `drawInterior` — AppKit's cells paint
+  the system pressed fill from there, which lands on top of the palette one (`ThemedTableHeaderCell`).
+- Pixel tests render the view and sample the bitmap: sample in POINTS (the rep is at backing scale) and compare
+- **Auditing? Read `AUDIT.md` first** — what the last full audit checked and fixed, and the known non-issues to skip; extend it, do not redo it.
+  against the palette colour rendered through the SAME path, never against its hex — colour spaces differ.

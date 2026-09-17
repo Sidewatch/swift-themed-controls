@@ -44,6 +44,9 @@ bar.target = self; bar.action = #selector(filterChanged)
 - `ThemedPillButton`, `ThemedCheckbox` — accent-filled controls (`open`, subclassable).
 - `ThemedSearchField`, `ThemedInputField`, `ThemedSecureInputField` — fields with a themed border and placeholder.
 - `ThemedRowView`, `ThemedSelectionRowView`, `ThemedGroupRowView` — `NSTableRowView`s with the palette's selection and separators.
+- `ThemedTableHeaderView` + `ThemedTableHeaderCell` — a table header in the palette: band, bottom hairline,
+  column divider, title and pressed state. Use BOTH — the view alone leaves the stock cell painting a system
+  background over it — and the cell keeps the sort indicator a plain `draw(withFrame:in:)` override loses.
 - `ThemedScrollView` — overlay scrollers whose knob follows the palette's appearance.
 - `EmptyStateView` — symbol, title, subtitle and up to two actions, centred.
 
