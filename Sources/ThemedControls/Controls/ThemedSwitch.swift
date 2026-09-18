@@ -1,0 +1,145 @@
+//
+//  ThemedSwitch.swift
+//  ThemedControls
+//
+//  A theme-tinted on/off switch: the palette accent when on, where NSSwitch shows the macOS accent.
+//
+//  Created by David Sherlock on 9/19/26.
+//
+
+import AppKit
+
+/// A theme-tinted on/off switch. `NSSwitch` fills with the macOS accent when on and offers no
+/// API to change that, so on a gold or teal theme every switch in Settings was the one blue
+/// thing on the page. This one draws its own track and knob from the palette (accent on, a
+/// lifted surface off), slides the knob over 0.18 s, toggles on click and Space, dims when
+/// disabled, and reads to VoiceOver as a switch. Same shape as `NSSwitch` where a host touches
+/// it — `state`, `target`/`action`, `isEnabled`, the same footprint — so a swap is a type change.
+open class ThemedSwitch: NSControl {
+    /// `.on` or `.off`. Setting it repaints (sliding while on screen) without firing the action.
+    public var state: NSControl.StateValue = .off {
+        didSet { if state != oldValue { slide(to: state == .on ? 1 : 0, animated: window != nil) } }
+    }
+
+    /// The stock switch's footprint, read once so the rows keep their geometry on every macOS.
+    private static let footprint: NSSize = NSSwitch().intrinsicContentSize
+    /// 0 = knob at the left (off) … 1 = at the right (on); animated between the two.
+    private var knobProgress: CGFloat = 0
+    private var animation: SlideAnimation?
+
+    public override init(frame: NSRect) {
+        super.init(frame: frame)
+        translatesAutoresizingMaskIntoConstraints = false
+        setAccessibilityRole(.checkBox)
+        setAccessibilitySubrole(NSAccessibility.Subrole(rawValue: "AXSwitch"))
+        NotificationCenter.default.addObserver(self, selector: #selector(themeChanged),
+                                               name: ThemedControls.paletteDidChange, object: nil)
+    }
+    @available(*, unavailable) public required init?(coder: NSCoder) { fatalError() }
+    deinit { NotificationCenter.default.removeObserver(self) }
+
+    @objc private func themeChanged() { needsDisplay = true }
+
+    open override var intrinsicContentSize: NSSize { Self.footprint }
+    open override var allowsVibrancy: Bool { false }
+    open override var acceptsFirstResponder: Bool { isEnabled }
+    open override var isEnabled: Bool { didSet { needsDisplay = true } }
+
+    // MARK: Drawing
+
+    open override func draw(_ dirtyRect: NSRect) {
+        let r = bounds
+        let palette = ThemedControls.palette
+        let on = palette.accent
+        let off = palette.elevatedSurface(dark: 0.22, light: 0.14)
+        let track = (on.blended(withFraction: 1 - knobProgress, of: off) ?? on)
+            .withAlphaComponent(isEnabled ? 1 : 0.4)
+        track.setFill()
+        NSBezierPath(roundedRect: r, xRadius: r.height / 2, yRadius: r.height / 2).fill()
+
+        let inset: CGFloat = 2
+        let d = r.height - 2 * inset
+        let x = inset + (r.width - 2 * inset - d) * knobProgress
+        let knob = NSRect(x: x, y: inset, width: d, height: d)
+        NSGraphicsContext.saveGraphicsState()
+        let shadow = NSShadow()
+        shadow.shadowBlurRadius = 1.5
+        shadow.shadowOffset = NSSize(width: 0, height: isFlipped ? 0.5 : -0.5)
+        shadow.shadowColor = NSColor.black.withAlphaComponent(0.3)
+        shadow.set()
+        NSColor.white.withAlphaComponent(isEnabled ? 1 : 0.7).setFill()
+        NSBezierPath(ovalIn: knob).fill()
+        NSGraphicsContext.restoreGraphicsState()
+    }
+
+    open override func drawFocusRingMask() {
+        NSBezierPath(roundedRect: bounds, xRadius: bounds.height / 2, yRadius: bounds.height / 2).fill()
+    }
+    open override var focusRingMaskBounds: NSRect { bounds }
+
+    // MARK: Interaction
+
+    /// Flips the state and fires the action — what a click or Space does.
+    public func toggle() {
+        guard isEnabled else { return }
+        state = state == .on ? .off : .on
+        if let action { sendAction(action, to: target) }
+    }
+
+    open override func performClick(_ sender: Any?) { toggle() }
+
+    open override func mouseDown(with event: NSEvent) {
+        guard isEnabled else { return }
+        // A button's contract: the toggle happens on a release INSIDE the control.
+        var inside = true
+        while let next = window?.nextEvent(matching: [.leftMouseUp, .leftMouseDragged]) {
+            inside = bounds.contains(convert(next.locationInWindow, from: nil))
+            if next.type == .leftMouseUp { break }
+        }
+        if inside { toggle() }
+    }
+
+    open override func keyDown(with event: NSEvent) {
+        if event.charactersIgnoringModifiers == " " || event.keyCode == 36 { toggle() } else { super.keyDown(with: event) }
+    }
+
+    open override func isAccessibilityElement() -> Bool { true }
+    open override func accessibilityValue() -> Any? { state == .on ? 1 : 0 }
+    open override func accessibilityPerformPress() -> Bool { toggle(); return true }
+
+    // MARK: Slide
+
+    private func slide(to target: CGFloat, animated: Bool) {
+        animation?.stop()
+        animation = nil
+        guard animated, abs(target - knobProgress) > 0.01 else {
+            knobProgress = target
+            needsDisplay = true
+            return
+        }
+        let from = knobProgress
+        let anim = SlideAnimation(duration: 0.18, animationCurve: .easeInOut)
+        anim.animationBlockingMode = .nonblocking
+        // The animation ticks on the main run loop (non-blocking mode) but is not itself
+        // main-actor; the tick hops back explicitly, the house idiom for AppKit callbacks.
+        nonisolated(unsafe) weak var me: ThemedSwitch? = self
+        anim.onTick = { progress in
+            MainActor.assumeIsolated {
+                guard let me else { return }
+                me.knobProgress = from + (target - from) * CGFloat(progress)
+                me.needsDisplay = true
+            }
+        }
+        animation = anim
+        anim.start()
+    }
+}
+
+/// An `NSAnimation` that reports its progress to a closure — the run-loop-driven slide, no
+/// display link and no Core Animation layer to keep in step with the switch's drawing.
+nonisolated private final class SlideAnimation: NSAnimation {
+    nonisolated(unsafe) var onTick: (@Sendable (Double) -> Void)?
+    override var currentProgress: NSAnimation.Progress {
+        didSet { onTick?(Double(currentProgress)) }
+    }
+}
