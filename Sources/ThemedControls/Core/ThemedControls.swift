@@ -17,4 +17,9 @@ public enum ThemedControls {
 
     /// Posted by the host after the palette's colours changed; every control repaints.
     public static let paletteDidChange = Notification.Name("ThemedControls.paletteDidChange")
+
+    /// Mirror of System Settings ▸ Accessibility ▸ Display ▸ Reduce Motion. Read once from the
+    /// workspace; the host re-sets it on `NSWorkspace.accessibilityDisplayOptionsDidChangeNotification`
+    /// (a harness sets it directly). Controls that move — the switch's slide — snap when it is on.
+    nonisolated(unsafe) public static var reduceMotion: Bool = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
 }

@@ -18,8 +18,11 @@ import AppKit
 open class ThemedSwitch: NSControl {
     /// `.on` or `.off`. Setting it repaints (sliding while on screen) without firing the action.
     public var state: NSControl.StateValue = .off {
-        didSet { if state != oldValue { slide(to: state == .on ? 1 : 0, animated: window != nil) } }
+        didSet { if state != oldValue { slide(to: state == .on ? 1 : 0, animated: window != nil && !ThemedControls.reduceMotion) } }
     }
+
+    /// True while the knob is mid-slide (never under Reduce Motion, or off screen).
+    public var isSliding: Bool { animation != nil }
 
     /// The stock switch's footprint, read once so the rows keep their geometry on every macOS.
     private static let footprint: NSSize = NSSwitch().intrinsicContentSize
@@ -128,6 +131,7 @@ open class ThemedSwitch: NSControl {
                 guard let me else { return }
                 me.knobProgress = from + (target - from) * CGFloat(progress)
                 me.needsDisplay = true
+                if progress >= 1 { me.animation = nil }
             }
         }
         animation = anim

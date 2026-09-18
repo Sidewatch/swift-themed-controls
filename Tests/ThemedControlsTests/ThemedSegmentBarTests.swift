@@ -18,6 +18,47 @@ final class ThemedSegmentBarTests: XCTestCase {
     private let font = NSFont.systemFont(ofSize: 11, weight: .medium)
     private func width(_ s: String) -> CGFloat { ceil((s as NSString).size(withAttributes: [.font: font]).width) }
 
+    private final class Counter: NSObject {
+        var fired = 0
+        @objc func fire(_ sender: Any?) { fired += 1 }
+    }
+
+    /// VoiceOver sees one radio button per segment, named, the selected one valued 1.
+    func testSegmentsAreVoiceOverRadioButtonsThatPress() {
+        let bar = ThemedSegmentBar(labels: ["All", "30d", "7d"])
+        bar.frame = NSRect(x: 0, y: 0, width: 180, height: 24)
+        let counter = Counter()
+        bar.target = counter; bar.action = #selector(Counter.fire(_:))
+        XCTAssertEqual(bar.accessibilityRole(), .radioGroup)
+        let kids = (bar.accessibilityChildren() ?? []).compactMap { $0 as? NSAccessibilityElement }
+        XCTAssertEqual(kids.map { $0.accessibilityLabel() ?? "" }, ["All", "30d", "7d"])
+        XCTAssertEqual(kids.map { $0.accessibilityValue() as? Int ?? -1 }, [1, 0, 0])
+        guard kids.count == 3 else { return XCTFail("no segment children — VoiceOver sees an unlabeled blob") }
+        XCTAssertTrue(kids[2].accessibilityPerformPress())
+        XCTAssertEqual(bar.selectedSegment, 2)
+        XCTAssertEqual(counter.fired, 1)
+        _ = kids[2].accessibilityPerformPress()
+        XCTAssertEqual(counter.fired, 1, "pressing the selected segment again is a no-op")
+        XCTAssertEqual(bar.accessibilityValue() as? String, "7d")
+    }
+
+    /// The arrow keys move the selection and fire, and stop at the ends.
+    func testArrowKeysMoveTheSelection() throws {
+        let bar = ThemedSegmentBar(labels: ["A", "B", "C"])
+        let counter = Counter()
+        bar.target = counter; bar.action = #selector(Counter.fire(_:))
+        func key(_ code: UInt16) throws -> NSEvent {
+            try XCTUnwrap(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: 0,
+                                           context: nil, characters: "", charactersIgnoringModifiers: "", isARepeat: false, keyCode: code))
+        }
+        bar.keyDown(with: try key(124)); bar.keyDown(with: try key(124)); bar.keyDown(with: try key(124))
+        XCTAssertEqual(bar.selectedSegment, 2, "→ ×3 from A stops at C")
+        XCTAssertEqual(counter.fired, 2)
+        bar.keyDown(with: try key(123))
+        XCTAssertEqual(bar.selectedSegment, 1)
+        XCTAssertEqual(counter.fired, 3)
+    }
+
     func testTheBarRedrawsWhileResized() {
         XCTAssertEqual(ThemedSegmentBar(labels: ["A"]).layerContentsRedrawPolicy, .duringViewResize)
     }

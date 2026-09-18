@@ -124,8 +124,59 @@ public final class ThemedSegmentBar: NSControl {
 
     public override func mouseDown(with event: NSEvent) {
         let p = convert(event.locationInWindow, from: nil)
-        guard let i = frames().firstIndex(where: { $0.contains(p) }), i != selectedSegment else { return }
+        guard let i = frames().firstIndex(where: { $0.contains(p) }) else { return }
+        select(i)
+    }
+
+    /// Selects segment `i` and fires the action — what a click, an arrow key and VoiceOver do.
+    /// Selecting the current segment is a no-op.
+    public func select(_ i: Int) {
+        guard labels.indices.contains(i), i != selectedSegment else { return }
         selectedSegment = i
         if let action { sendAction(action, to: target) }
     }
+
+    // MARK: Keyboard — Full Keyboard Access lands here and ← → move the selection.
+
+    public override var acceptsFirstResponder: Bool { isEnabled }
+    public override func keyDown(with event: NSEvent) {
+        switch event.keyCode {
+        case 123: select(max(0, selectedSegment - 1))                  // ←
+        case 124: select(min(labels.count - 1, selectedSegment + 1))   // →
+        default: super.keyDown(with: event)
+        }
+    }
+    public override func drawFocusRingMask() { NSBezierPath(roundedRect: bounds, xRadius: 6, yRadius: 6).fill() }
+    public override var focusRingMaskBounds: NSRect { bounds }
+
+    // MARK: Accessibility — a radio group whose children are the segments.
+
+    private lazy var segmentElements: [SegmentElement] = labels.indices.map { i in
+        let element = SegmentElement()
+        element.setAccessibilityRole(.radioButton)
+        element.setAccessibilityLabel(labels[i])
+        element.setAccessibilityParent(self)
+        nonisolated(unsafe) weak var me: ThemedSegmentBar? = self
+        element.onPress = { MainActor.assumeIsolated { me?.select(i) } }
+        return element
+    }
+
+    public override func isAccessibilityElement() -> Bool { true }
+    public override func accessibilityRole() -> NSAccessibility.Role? { .radioGroup }
+    public override func accessibilityValue() -> Any? { labels.indices.contains(selectedSegment) ? labels[selectedSegment] : nil }
+    public override func accessibilityChildren() -> [Any]? {
+        let rects = frames()
+        for (i, element) in segmentElements.enumerated() {
+            element.setAccessibilityValue(i == selectedSegment ? 1 : 0)
+            if i < rects.count { element.setAccessibilityFrameInParentSpace(rects[i]) }
+        }
+        return segmentElements
+    }
+}
+
+/// One segment as VoiceOver sees it: a radio button that presses back into the bar. Not
+/// main-actor (AppKit's accessibility classes are not); the press hops explicitly.
+nonisolated private final class SegmentElement: NSAccessibilityElement {
+    nonisolated(unsafe) var onPress: (@Sendable () -> Void)?
+    override func accessibilityPerformPress() -> Bool { onPress?(); return true }
 }

@@ -43,6 +43,7 @@ bar.target = self; bar.action = #selector(filterChanged)
 - `ThemedSegmentBar` — equal-width or hugging segments with SF Symbols; shortens or drops labels that do not fit; redraws while resized.
 - `ThemedPillButton`, `ThemedCheckbox` — accent-filled controls (`open`, subclassable); a disabled pill dims to 40%.
 - `ThemedSlider` — an `NSSlider` whose filled track is the palette accent (knob and ticks stay the system's).
+- Accessibility: `ThemedSegmentBar` is a VoiceOver radio group whose segments press, and ← → move its selection under Full Keyboard Access; `ThemedSwitch` reads as a switch, toggles on Space, and snaps instead of sliding when `ThemedControls.reduceMotion` is on (the host mirrors System Settings ▸ Accessibility ▸ Reduce Motion into it).
 - `ThemedSwitch` — an on/off switch drawn from the palette (`NSSwitch` fills with the macOS accent and cannot be tinted): `state`, `target`/`action`, `isEnabled`, the stock footprint, click and Space, a 0.18 s slide, VoiceOver switch role.
 - `ThemedSearchField`, `ThemedInputField`, `ThemedSecureInputField` — fields with a themed border and placeholder.
 - `ThemedRowView`, `ThemedSelectionRowView`, `ThemedGroupRowView` — `NSTableRowView`s with the palette's selection and separators.

@@ -55,6 +55,22 @@ final class ThemedSwitchTests: XCTestCase {
         XCTAssertEqual(counter.fired, 1)
     }
 
+    /// On screen the knob slides; under Reduce Motion it snaps.
+    func testReduceMotionSnapsInsteadOfSliding() {
+        let host = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 100), styleMask: [.titled], backing: .buffered, defer: false)
+        let sw = ThemedSwitch()
+        host.contentView?.addSubview(sw)
+        let before = ThemedControls.reduceMotion
+        defer { ThemedControls.reduceMotion = before }
+        ThemedControls.reduceMotion = true
+        sw.state = .on
+        XCTAssertFalse(sw.isSliding, "Reduce Motion: no slide")
+        ThemedControls.reduceMotion = false
+        sw.state = .off
+        XCTAssertTrue(sw.isSliding, "otherwise the knob slides over 0.18 s")
+        host.orderOut(nil)
+    }
+
     /// Renders the switch on and off and reads the track where the knob is not.
     func testTheTrackPaintsTheAccentWhenOnAndNotWhenOff() throws {
         ThemedControls.palette = RedAccent()
