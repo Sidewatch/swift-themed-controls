@@ -21,6 +21,16 @@ dead-code and risk-pattern scans, docs drift); line-by-line logic review was tar
 - Fixed: `AGENTS.md` was a copy of swift-theme-model's; it now mirrors CLAUDE.md.
 - Fixed: `ThemedTableHeaderCell` added (band, hairlines, title inset + centring, pressed state, sort indicator) with pixel tests.
 
+## Logic review — 18 Sep 2026 (every source and test file, line by line)
+
+Nothing to fix. Checked: `ThemedSegmentBar` (the divider is skipped beside the selected pill, the
+ellipsis plan never exceeds its segment, a click fires the action once and never for the current
+segment), `ThemedPillButton` (`attributedTitle` set from `applyTheme` does not re-enter the `title`
+observer), `ThemedTableHeaderCell` (the column-rect test, the pressed flag dropped around
+`drawInterior`, the indicator read from the table's own descriptors), `ThemedScrollView.tile()`'s
+`!=` guard, `ThemedSearchField`'s placeholder applied at the end of init, `EmptyStateView`'s fixed
+wrap width, `FieldEditorPolicy`'s weak-keyed table, `SystemPalette`.
+
 ## Known non-issues (do not "fix" these again)
 
 - `ThemedCheckbox.allowsVibrancy` shows as unreferenced — it is an `NSView` override AppKit reads.
@@ -29,3 +39,4 @@ dead-code and risk-pattern scans, docs drift); line-by-line logic review was tar
 ## History
 
 - 17 Sep 2026 — full audit (app + all 20 libraries), Claude with David.
+- 18 Sep 2026 — logic review (every source and test file, line by line), Claude with David.
