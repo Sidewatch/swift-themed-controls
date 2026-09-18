@@ -40,6 +40,14 @@ final class PaletteTests: XCTestCase {
         XCTAssertEqual(ThemedControls.palette.elevatedSurface(dark: 0.1, light: 0.05), .darkGray)
     }
 
+    func testAThemedSliderFillsItsTrackWithTheAccent() {
+        let slider = ThemedSlider()
+        ThemedControls.palette = Loud()
+        defer { ThemedControls.palette = SystemPalette() }
+        NotificationCenter.default.post(name: ThemedControls.paletteDidChange, object: nil)
+        XCTAssertEqual(slider.trackFillColor, .red, "the filled track follows the palette, not the macOS accent")
+    }
+
     func testTheSystemPaletteLiftsASurfaceTowardTheForeground() {
         let p = SystemPalette()
         XCTAssertNotEqual(p.elevatedSurface(dark: 0.2, light: 0.2), NSColor.windowBackgroundColor, "blended, not the raw background")

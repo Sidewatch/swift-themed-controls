@@ -40,3 +40,4 @@ wrap width, `FieldEditorPolicy`'s weak-keyed table, `SystemPalette`.
 
 - 17 Sep 2026 — full audit (app + all 20 libraries), Claude with David.
 - 18 Sep 2026 — logic review (every source and test file, line by line), Claude with David.
+- 18 Sep 2026 — `ThemedSlider` (filled track = palette accent) and a visible disabled state on `ThemedPillButton` (40%); both tested. For the app's database view and Settings sliders, which still wore system chrome.

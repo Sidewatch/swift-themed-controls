@@ -41,7 +41,8 @@ bar.target = self; bar.action = #selector(filterChanged)
 ## Controls
 
 - `ThemedSegmentBar` — equal-width or hugging segments with SF Symbols; shortens or drops labels that do not fit; redraws while resized.
-- `ThemedPillButton`, `ThemedCheckbox` — accent-filled controls (`open`, subclassable).
+- `ThemedPillButton`, `ThemedCheckbox` — accent-filled controls (`open`, subclassable); a disabled pill dims to 40%.
+- `ThemedSlider` — an `NSSlider` whose filled track is the palette accent (knob and ticks stay the system's).
 - `ThemedSearchField`, `ThemedInputField`, `ThemedSecureInputField` — fields with a themed border and placeholder.
 - `ThemedRowView`, `ThemedSelectionRowView`, `ThemedGroupRowView` — `NSTableRowView`s with the palette's selection and separators.
 - `ThemedTableHeaderView` + `ThemedTableHeaderCell` — a table header in the palette: band, bottom hairline,
