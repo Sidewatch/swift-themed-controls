@@ -42,6 +42,34 @@ final class ThemedSegmentBarTests: XCTestCase {
         XCTAssertEqual(bar.accessibilityValue() as? String, "7d")
     }
 
+    /// A momentary bar fires on every press, keeps no selection and reports the segment; a
+    /// disabled segment, or a disabled bar, ignores the press.
+    func testMomentaryAndDisabledSegments() {
+        let bar = ThemedSegmentBar(labels: ["Add", "Remove"], symbols: ["plus", "minus"])
+        bar.isMomentary = true
+        bar.symbolsOnly = true
+        let counter = Counter()
+        bar.target = counter; bar.action = #selector(Counter.fire(_:))
+        bar.select(1); bar.select(1); bar.select(0)
+        XCTAssertEqual(counter.fired, 3, "every press fires, the same segment twice included")
+        XCTAssertEqual(bar.clickedSegment, 0)
+        XCTAssertEqual(bar.selectedSegment, 0, "a momentary bar never moves its selection")
+        XCTAssertEqual(bar.intrinsicContentSize.width, 64, "symbols only: two 32-pt segments")
+        bar.setEnabled(false, forSegment: 1)
+        bar.select(1)
+        XCTAssertEqual(counter.fired, 3, "a disabled segment ignores the press")
+        XCTAssertFalse(bar.isEnabled(forSegment: 1))
+        bar.setEnabled(true, forSegment: 1)
+        bar.isEnabled = false
+        bar.select(1)
+        XCTAssertEqual(counter.fired, 3, "a disabled bar ignores the press")
+        bar.isEnabled = true
+        bar.select(1)
+        XCTAssertEqual(counter.fired, 4)
+        let kids = (bar.accessibilityChildren() ?? []).compactMap { $0 as? NSAccessibilityElement }
+        XCTAssertEqual(kids.map { $0.accessibilityLabel() ?? "" }, ["Add", "Remove"], "VoiceOver still reads the labels")
+    }
+
     /// The arrow keys move the selection and fire, and stop at the ends.
     func testArrowKeysMoveTheSelection() throws {
         let bar = ThemedSegmentBar(labels: ["A", "B", "C"])

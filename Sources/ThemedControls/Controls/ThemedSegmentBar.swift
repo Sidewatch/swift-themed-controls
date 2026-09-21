@@ -21,6 +21,21 @@ public final class ThemedSegmentBar: NSControl {
     private let symbols: [String?]
     /// Selected index; setting it repaints without firing the action.
     public var selectedSegment: Int = 0 { didSet { needsDisplay = true } }
+    /// Momentary (22 Sep 2026, the +/− list controls): no segment stays selected, every click
+    /// fires the action, and `clickedSegment` says which — the stock control's `.momentary`.
+    public var isMomentary = false { didSet { needsDisplay = true } }
+    /// The segment of the last click or press; -1 before any.
+    public private(set) var clickedSegment = -1
+    /// Draw the symbols alone and keep the labels for VoiceOver (a +/− pair reads "Add", "Remove").
+    public var symbolsOnly = false { didSet { invalidateIntrinsicContentSize(); needsDisplay = true } }
+    private var disabledSegments: Set<Int> = []
+    /// A segment that draws dimmed and ignores clicks, keys and VoiceOver presses.
+    public func setEnabled(_ enabled: Bool, forSegment i: Int) {
+        if enabled { disabledSegments.remove(i) } else { disabledSegments.insert(i) }
+        needsDisplay = true
+    }
+    public func isEnabled(forSegment i: Int) -> Bool { !disabledSegments.contains(i) }
+    public override var isEnabled: Bool { didSet { needsDisplay = true } }
     /// Equal-width segments across the whole width (Library) instead of hugging (Usage).
     public var fillsWidth = false { didSet { invalidateIntrinsicContentSize(); needsDisplay = true } }
     public var barHeight: CGFloat = 24 { didSet { invalidateIntrinsicContentSize() } }
@@ -45,6 +60,7 @@ public final class ThemedSegmentBar: NSControl {
     private var textFont: NSFont { .systemFont(ofSize: 11, weight: .medium) }
 
     private func naturalWidth(_ i: Int) -> CGFloat {
+        if symbolsOnly { return 32 }
         let text = (labels[i] as NSString).size(withAttributes: [.font: textFont]).width
         return ceil(text) + (symbols[i] == nil ? 0 : 18) + 24
     }
@@ -80,17 +96,18 @@ public final class ThemedSegmentBar: NSControl {
         ThemedControls.palette.elevatedSurface(dark: 0.07, light: 0.04).setFill(); outline.fill()
         ThemedControls.palette.rowSeparator.setStroke(); outline.lineWidth = 1; outline.stroke()
         for (i, f) in frames().enumerated() {
-            let selected = i == selectedSegment
+            let selected = !isMomentary && i == selectedSegment
             if selected {
                 let pill = NSBezierPath(roundedRect: f.insetBy(dx: 2, dy: 2), xRadius: 4, yRadius: 4)
                 ThemedControls.palette.accent.withAlphaComponent(0.92).setFill(); pill.fill()
-            } else if i > 0, i - 1 != selectedSegment {
+            } else if i > 0, isMomentary || i - 1 != selectedSegment {
                 ThemedControls.palette.rowSeparator.setFill()
                 NSRect(x: f.minX, y: f.midY - 6, width: 1, height: 12).fill()
             }
-            let color = selected ? Self.onAccent : ThemedControls.palette.foreground.withAlphaComponent(0.85)
+            let dimmed = !isEnabled || !isEnabled(forSegment: i)
+            let color = (selected ? Self.onAccent : ThemedControls.palette.foreground.withAlphaComponent(0.85)).withAlphaComponent(dimmed ? 0.35 : 1)
             let attrs: [NSAttributedString.Key: Any] = [.font: textFont, .foregroundColor: color]
-            let plan = content(for: i, width: f.width)
+            let plan = symbolsOnly ? (symbol: symbols[i], text: "") : content(for: i, width: f.width)
             let text = plan.text as NSString
             let ts = text.size(withAttributes: attrs)
             let symbolW: CGFloat = plan.symbol == nil ? 0 : (plan.text.isEmpty ? 14 : 18)
@@ -123,15 +140,24 @@ public final class ThemedSegmentBar: NSControl {
     }
 
     public override func mouseDown(with event: NSEvent) {
+        guard isEnabled else { return }
         let p = convert(event.locationInWindow, from: nil)
         guard let i = frames().firstIndex(where: { $0.contains(p) }) else { return }
         select(i)
     }
 
     /// Selects segment `i` and fires the action — what a click, an arrow key and VoiceOver do.
-    /// Selecting the current segment is a no-op.
+    /// Selecting the current segment is a no-op; a momentary bar fires on every press and
+    /// keeps no selection. A disabled segment, or a disabled bar, does nothing.
     public func select(_ i: Int) {
-        guard labels.indices.contains(i), i != selectedSegment else { return }
+        guard isEnabled, labels.indices.contains(i), isEnabled(forSegment: i) else { return }
+        if isMomentary {
+            clickedSegment = i
+            if let action { sendAction(action, to: target) }
+            return
+        }
+        guard i != selectedSegment else { return }
+        clickedSegment = i
         selectedSegment = i
         if let action { sendAction(action, to: target) }
     }
