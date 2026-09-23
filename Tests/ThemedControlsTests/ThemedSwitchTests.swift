@@ -52,8 +52,8 @@ final class ThemedSwitchTests: XCTestCase {
         XCTAssertLessThan(small.width, regular.width)
         XCTAssertLessThan(small.height, regular.height)
         XCTAssertLessThan(mini.height, small.height)
-        let stockSmall = NSSwitch(); stockSmall.controlSize = .small
-        XCTAssertEqual(small, stockSmall.intrinsicContentSize, "the stock small switch's footprint")
+        XCTAssertEqual(small.height, (regular.height * 0.78).rounded(), "small is the HIG's ratio of regular; the stock switch reports one size for every controlSize")
+        XCTAssertEqual(regular, NSSwitch().intrinsicContentSize)
         sw.controlSize = .regular
         XCTAssertEqual(sw.intrinsicContentSize, regular)
     }

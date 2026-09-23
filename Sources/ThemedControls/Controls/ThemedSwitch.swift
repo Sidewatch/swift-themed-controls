@@ -24,16 +24,19 @@ open class ThemedSwitch: NSControl {
     /// True while the knob is mid-slide (never under Reduce Motion, or off screen).
     public var isSliding: Bool { animation != nil }
 
-    /// The stock switch's footprint per control size, read once each so the rows keep their
-    /// geometry on every macOS. `.small` fits a header strip; `.regular` a settings row.
-    private nonisolated(unsafe) static var footprints: [NSControl.ControlSize: NSSize] = [:]
+    /// The stock switch's footprint, read once so the rows keep their geometry on every macOS.
+    private static let footprint: NSSize = NSSwitch().intrinsicContentSize
+    /// `.small` and `.mini` are the regular footprint scaled — `NSSwitch` reports ONE intrinsic
+    /// size whatever its `controlSize` (measured 23 Sep 2026: 54 × 24 for all three), so there is
+    /// nothing to read; the ratios are the HIG's small and mini against regular, rounded.
     private static func footprint(for size: NSControl.ControlSize) -> NSSize {
-        if let cached = footprints[size] { return cached }
-        let stock = NSSwitch()
-        stock.controlSize = size
-        let measured = stock.intrinsicContentSize
-        footprints[size] = measured
-        return measured
+        let scale: CGFloat
+        switch size {
+        case .small: scale = 0.78
+        case .mini: scale = 0.62
+        default: return footprint
+        }
+        return NSSize(width: (footprint.width * scale).rounded(), height: (footprint.height * scale).rounded())
     }
     /// The size class follows the stock switch's: the footprint and the drawing scale with it.
     open override var controlSize: NSControl.ControlSize {
