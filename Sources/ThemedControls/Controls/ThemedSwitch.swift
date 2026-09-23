@@ -24,8 +24,21 @@ open class ThemedSwitch: NSControl {
     /// True while the knob is mid-slide (never under Reduce Motion, or off screen).
     public var isSliding: Bool { animation != nil }
 
-    /// The stock switch's footprint, read once so the rows keep their geometry on every macOS.
-    private static let footprint: NSSize = NSSwitch().intrinsicContentSize
+    /// The stock switch's footprint per control size, read once each so the rows keep their
+    /// geometry on every macOS. `.small` fits a header strip; `.regular` a settings row.
+    private nonisolated(unsafe) static var footprints: [NSControl.ControlSize: NSSize] = [:]
+    private static func footprint(for size: NSControl.ControlSize) -> NSSize {
+        if let cached = footprints[size] { return cached }
+        let stock = NSSwitch()
+        stock.controlSize = size
+        let measured = stock.intrinsicContentSize
+        footprints[size] = measured
+        return measured
+    }
+    /// The size class follows the stock switch's: the footprint and the drawing scale with it.
+    open override var controlSize: NSControl.ControlSize {
+        didSet { invalidateIntrinsicContentSize(); needsDisplay = true }
+    }
     /// 0 = knob at the left (off) … 1 = at the right (on); animated between the two.
     private var knobProgress: CGFloat = 0
     private var animation: SlideAnimation?
@@ -43,7 +56,7 @@ open class ThemedSwitch: NSControl {
 
     @objc private func themeChanged() { needsDisplay = true }
 
-    open override var intrinsicContentSize: NSSize { Self.footprint }
+    open override var intrinsicContentSize: NSSize { Self.footprint(for: controlSize) }
     open override var allowsVibrancy: Bool { false }
     open override var acceptsFirstResponder: Bool { isEnabled }
     open override var isEnabled: Bool { didSet { needsDisplay = true } }

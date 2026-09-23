@@ -9,7 +9,7 @@ AppKit controls drawn from a host-supplied palette. Module `ThemedControls`; `sw
 
 - `Protocols/` — protocols the module exposes: ControlPalette (what a control reads from the theme)
 - `Core/` — the engine: ThemedControls (the installed palette and the paletteDidChange notification)
-- `Controls/` — one control per file: ThemedSegmentBar, ThemedPillButton, ThemedSlider, ThemedSwitch, ThemedCheckbox, ThemedSearchField, ThemedInputField, ThemedRowView, ThemedScrollView, EmptyStateView, ThemedPopUpButton, ThemedTableHeaderView, ThemedTableHeaderCell (secondary types alongside: ThemedInputStyle, PaddedFieldCell, ThemedSecureInputField, ThemedSelectionRowView, ThemedGroupRowView)
+- `Controls/` — one control per file: ThemedSegmentBar, ThemedPillButton, ThemedSlider, ThemedSwitch (`controlSize` sizes it like the stock switch), ThemedCheckbox, ThemedSearchField, ThemedInputField, ThemedRowView, ThemedScrollView, EmptyStateView, ThemedPopUpButton, ThemedTableHeaderView, ThemedTableHeaderCell (secondary types alongside: ThemedInputStyle, PaddedFieldCell, ThemedSecureInputField, ThemedSelectionRowView, ThemedGroupRowView)
 - `Support/` — pure helpers: SystemPalette (the macOS system colours as a palette)
 - `Extensions/` — one extension per idiom: NSColor+Blend, NSImage+Tinted, NSTextView+SystemTextIntelligence, NSTextView+WritingTools
 

@@ -40,6 +40,24 @@ final class ThemedSwitchTests: XCTestCase {
         XCTAssertEqual(ThemedSwitch().intrinsicContentSize, NSSwitch().intrinsicContentSize)
     }
 
+    /// A header strip wants the small switch (23 Sep 2026): the footprint follows the control
+    /// size, as the stock switch's does, and the drawing is bounds-relative so it scales with it.
+    func testTheFootprintFollowsTheControlSize() {
+        let sw = ThemedSwitch(frame: .zero)
+        let regular = sw.intrinsicContentSize
+        sw.controlSize = .small
+        let small = sw.intrinsicContentSize
+        sw.controlSize = .mini
+        let mini = sw.intrinsicContentSize
+        XCTAssertLessThan(small.width, regular.width)
+        XCTAssertLessThan(small.height, regular.height)
+        XCTAssertLessThan(mini.height, small.height)
+        let stockSmall = NSSwitch(); stockSmall.controlSize = .small
+        XCTAssertEqual(small, stockSmall.intrinsicContentSize, "the stock small switch's footprint")
+        sw.controlSize = .regular
+        XCTAssertEqual(sw.intrinsicContentSize, regular)
+    }
+
     func testToggleFlipsAndFiresOnceAndASetStateIsSilent() {
         let sw = ThemedSwitch()
         let counter = Counter()
