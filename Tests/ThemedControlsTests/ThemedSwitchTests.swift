@@ -36,6 +36,23 @@ final class ThemedSwitchTests: XCTestCase {
         @objc func toggled(_ sender: Any?) { fired += 1 }
     }
 
+    /// The paint matches the stock switch's visible track (measured 24 Sep 2026: regular 32 × 21,
+    /// small 26 × 17, mini 21 × 14 inside a 54 × 24 frame), at the trailing end of the footprint,
+    /// centred vertically — the footprint itself is unchanged, so layouts do not move.
+    func testTrackIsTheStockSwitchsVisibleSizeInsideTheFootprint() {
+        for (size, want) in [(NSControl.ControlSize.regular, NSSize(width: 32, height: 21)), (.small, NSSize(width: 26, height: 17)), (.mini, NSSize(width: 21, height: 14))] {
+            let sw = ThemedSwitch()
+            sw.controlSize = size
+            sw.frame = NSRect(origin: .zero, size: sw.intrinsicContentSize)
+            let track = sw.trackRect
+            XCTAssertEqual(track.size, want, "\(size)")
+            XCTAssertEqual(track.maxX, sw.bounds.maxX - 2, accuracy: 0.01, "\(size): trailing edge")
+            XCTAssertEqual(track.midY, sw.bounds.midY, accuracy: 0.5, "\(size): centred")
+            XCTAssertTrue(sw.bounds.contains(track), "\(size): inside the footprint")
+        }
+        XCTAssertEqual(ThemedSwitch().intrinsicContentSize, NSSwitch().intrinsicContentSize, "the footprint is still the stock one")
+    }
+
     func testTheFootprintIsTheStockSwitchs() {
         XCTAssertEqual(ThemedSwitch().intrinsicContentSize, NSSwitch().intrinsicContentSize)
     }
@@ -99,8 +116,12 @@ final class ThemedSwitchTests: XCTestCase {
             sw.cacheDisplay(in: sw.bounds, to: rep)
             let scale = CGFloat(rep.pixelsWide) / sw.bounds.width
             var reds = 0, samples = 0
-            for px in stride(from: Int(sw.bounds.width * (side - 0.08) * scale), to: Int(sw.bounds.width * (side + 0.08) * scale), by: 1) {
-                guard let c = rep.colorAt(x: px, y: rep.pixelsHigh / 2)?.usingColorSpace(.sRGB) else { continue }
+            // Sampled along the TRACK (the paint sits at the trailing end of the footprint since
+            // 24 Sep 2026), `side` a fraction of its width, on its centre line.
+            let track = sw.trackRect
+            let y = Int((sw.bounds.maxY - track.midY) * scale)   // rep rows run top-down
+            for px in stride(from: Int((track.minX + track.width * (side - 0.08)) * scale), to: Int((track.minX + track.width * (side + 0.08)) * scale), by: 1) {
+                guard let c = rep.colorAt(x: px, y: y)?.usingColorSpace(.sRGB) else { continue }
                 samples += 1
                 if c.redComponent > 0.6, c.greenComponent < 0.35, c.blueComponent < 0.35 { reds += 1 }
             }

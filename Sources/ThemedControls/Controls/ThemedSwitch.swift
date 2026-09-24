@@ -60,6 +60,26 @@ open class ThemedSwitch: NSControl {
     @objc private func themeChanged() { needsDisplay = true }
 
     open override var intrinsicContentSize: NSSize { Self.footprint(for: controlSize) }
+
+    /// The VISIBLE track of the stock switch, measured 24 Sep 2026 by rendering `NSSwitch` at
+    /// each size and taking the ink bounds: regular 32 × 21, small 26 × 17, mini 21 × 14 —
+    /// inside a frame it reports as 54 × 24 whatever the size. This switch painted its whole
+    /// footprint until then, so it stood two-thirds wider than the system's beside the same
+    /// popups (David: "is this toggle the default size? feels a bit wide"). The footprint stays
+    /// (layout and hit area unchanged); the paint sits in the trailing end of it, 2 pt from the
+    /// edge and centred vertically, as the stock one sits in its frame.
+    static func trackSize(for size: NSControl.ControlSize) -> NSSize {
+        switch size {
+        case .small: return NSSize(width: 26, height: 17)
+        case .mini: return NSSize(width: 21, height: 14)
+        default: return NSSize(width: 32, height: 21)
+        }
+    }
+    /// Where the track is painted within `bounds`.
+    var trackRect: NSRect {
+        let size = Self.trackSize(for: controlSize)
+        return NSRect(x: bounds.maxX - 2 - size.width, y: bounds.midY - size.height / 2, width: size.width, height: size.height)
+    }
     open override var allowsVibrancy: Bool { false }
     open override var acceptsFirstResponder: Bool { isEnabled }
     open override var isEnabled: Bool { didSet { needsDisplay = true } }
@@ -67,7 +87,7 @@ open class ThemedSwitch: NSControl {
     // MARK: Drawing
 
     open override func draw(_ dirtyRect: NSRect) {
-        let r = bounds
+        let r = trackRect
         let palette = ThemedControls.palette
         let on = palette.accent
         let off = palette.elevatedSurface(dark: 0.22, light: 0.14)
@@ -78,8 +98,8 @@ open class ThemedSwitch: NSControl {
 
         let inset: CGFloat = 2
         let d = r.height - 2 * inset
-        let x = inset + (r.width - 2 * inset - d) * knobProgress
-        let knob = NSRect(x: x, y: inset, width: d, height: d)
+        let x = r.minX + inset + (r.width - 2 * inset - d) * knobProgress
+        let knob = NSRect(x: x, y: r.minY + inset, width: d, height: d)
         NSGraphicsContext.saveGraphicsState()
         let shadow = NSShadow()
         shadow.shadowBlurRadius = 1.5
@@ -92,7 +112,8 @@ open class ThemedSwitch: NSControl {
     }
 
     open override func drawFocusRingMask() {
-        NSBezierPath(roundedRect: bounds, xRadius: bounds.height / 2, yRadius: bounds.height / 2).fill()
+        let r = trackRect
+        NSBezierPath(roundedRect: r, xRadius: r.height / 2, yRadius: r.height / 2).fill()
     }
     open override var focusRingMaskBounds: NSRect { bounds }
 
