@@ -1,3 +1,7 @@
+> **This package has moved.** It is now the `ThemedControls` module of [swift-appkit-ui](https://github.com/Sidewatch/swift-appkit-ui), with its full
+> history. Depend on `.package(url: "https://github.com/Sidewatch/swift-appkit-ui.git", from: "0.1.0")` and the `ThemedControls` product;
+> `import ThemedControls` is unchanged. This repository is archived.
+
 # Swift Themed Controls
 
 AppKit controls that draw from **your app's palette** instead of the system's: a segment bar, pill button, search and input fields, table row views, a scroll view with a themed scroller, a checkbox and an empty-state view. The stock controls paint a system bezel and selection that ignore a custom theme; these read live from one `ControlPalette` and repaint on a notification, so a theme switch is one repaint away.
